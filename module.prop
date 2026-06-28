@@ -1,0 +1,7 @@
+id=SmoothDisplayToggle
+name=Smooth Display Toggle for Floral
+version=v1.6
+versionCode=7
+author=Hecker
+description=Control Pixel 4/4XL refresh rate. Force 90Hz (with battery saver override), Force 60Hz, or Auto. WebUI + QS tile companion app. Supports coral and flame.
+minMagisk=20400
