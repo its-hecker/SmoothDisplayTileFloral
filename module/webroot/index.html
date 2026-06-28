@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Smooth Display Toggle</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg: #0f0f0f; --surface: #1a1a1a; --surface2: #242424;
+    --border: #2e2e2e; --text: #f0f0f0; --sub: #888;
+    --green: #66bb6a; --amber: #ffa726; --blue: #4fc3f7; --red: #ef5350;
+  }
+  body {
+    background: var(--bg); color: var(--text);
+    font-family: 'Google Sans', Roboto, sans-serif;
+    min-height: 100vh; padding-bottom: 48px;
+  }
+
+  .hdr {
+    background: linear-gradient(135deg,#0d47a1,#0277bd);
+    padding: 28px 20px 22px; text-align: center; position: relative;
+  }
+  .hdr-icon { font-size: 34px; margin-bottom: 6px; display: block; }
+  .hdr h1  { font-size: 19px; font-weight: 600; color: #fff; }
+  .hdr p   { font-size: 12px; color: rgba(255,255,255,.6); margin-top: 3px; }
+  .badge {
+    position: absolute; top: 13px; right: 15px;
+    background: rgba(255,255,255,.15); border-radius: 20px;
+    padding: 3px 10px; font-size: 11px; color: rgba(255,255,255,.9);
+  }
+
+  .wrap { padding: 18px 15px; max-width: 480px; margin: 0 auto; }
+
+  .sec { font-size: 11px; font-weight: 600; letter-spacing: 1px;
+    color: var(--sub); text-transform: uppercase; margin: 22px 0 9px; }
+  .sec:first-child { margin-top: 0; }
+
+  /* Status row */
+  .sc {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 14px; padding: 14px 16px;
+    display: flex; align-items: center; gap: 13px; margin-bottom: 8px;
+  }
+  .si {
+    width:38px; height:38px; border-radius:10px;
+    display:flex; align-items:center; justify-content:center; font-size:18px; flex-shrink:0;
+  }
+  .si.bl { background:rgba(79,195,247,.1); }
+  .si.gr { background:rgba(102,187,106,.1); }
+  .si.am { background:rgba(255,167,38,.1); }
+  .sl { flex:1; }
+  .sl .l { font-size:11px; color:var(--sub); margin-bottom:2px; }
+  .sl .v { font-size:14px; font-weight:600; }
+  .dot { width:9px; height:9px; border-radius:50%; flex-shrink:0; }
+  .dg { background:var(--green); box-shadow:0 0 6px var(--green); }
+  .db { background:var(--blue);  box-shadow:0 0 6px var(--blue); }
+  .da { background:var(--amber); box-shadow:0 0 6px var(--amber); }
+
+  /* Mode cards */
+  .mc {
+    background:var(--surface); border:2px solid var(--border);
+    border-radius:15px; padding:15px 16px; margin-bottom:9px;
+    cursor:pointer; transition:all .18s; display:flex; align-items:center; gap:13px;
+    -webkit-tap-highlight-color:transparent; user-select:none;
+  }
+  .mc:active { transform:scale(.983); }
+  .mc.sel.cg { border-color:var(--green); background:rgba(102,187,106,.07); }
+  .mc.sel.ca { border-color:var(--amber); background:rgba(255,167,38,.07); }
+  .mc.sel.cb { border-color:var(--blue);  background:rgba(79,195,247,.07); }
+  .mi {
+    width:44px; height:44px; border-radius:12px; background:var(--surface2);
+    display:flex; align-items:center; justify-content:center; font-size:22px; flex-shrink:0;
+  }
+  .mt { font-size:14px; font-weight:600; margin-bottom:3px; }
+  .md { font-size:12px; color:var(--sub); line-height:1.4; }
+  .rd {
+    width:21px; height:21px; border-radius:50%; border:2px solid var(--border);
+    flex-shrink:0; display:flex; align-items:center; justify-content:center; transition:.18s;
+  }
+  .mc.sel.cg .rd { border-color:var(--green); }
+  .mc.sel.ca .rd { border-color:var(--amber); }
+  .mc.sel.cb .rd { border-color:var(--blue);  }
+  .rdd { width:9px; height:9px; border-radius:50%; display:none; }
+  .mc.sel .rdd { display:block; }
+  .mc.sel.cg .rdd { background:var(--green); }
+  .mc.sel.ca .rdd { background:var(--amber); }
+  .mc.sel.cb .rdd { background:var(--blue);  }
+
+  /* QS Tile info */
+  .qs-box {
+    background:var(--surface); border:1px solid var(--border);
+    border-radius:14px; padding:15px 16px; margin-bottom:8px;
+  }
+  .qs-title { font-size:13px; font-weight:600; margin-bottom:6px; display:flex; align-items:center; gap:8px; }
+  .qs-cycle { display:flex; align-items:center; gap:0; margin: 10px 0 4px; }
+  .qs-step {
+    flex:1; text-align:center; padding:8px 4px;
+    background:var(--surface2); font-size:11px; font-weight:600;
+  }
+  .qs-step:first-child { border-radius:8px 0 0 8px; }
+  .qs-step:last-child  { border-radius:0 8px 8px 0; }
+  .qs-step.active-g { background:rgba(102,187,106,.2); color:var(--green); }
+  .qs-step.active-a { background:rgba(255,167,38,.2);  color:var(--amber); }
+  .qs-step.active-b { background:rgba(79,195,247,.2);  color:var(--blue);  }
+  .qs-arrow { color:var(--sub); font-size:12px; padding: 0 2px; }
+  .qs-sub { font-size:11px; color:var(--sub); margin-top:4px; }
+
+  /* Toggle row */
+  .toggle-row {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 14px; padding: 14px 16px;
+    display: flex; align-items: center; gap: 13px; margin-bottom: 8px;
+    cursor: pointer; -webkit-tap-highlight-color: transparent;
+  }
+  .toggle-row:active { opacity: .85; }
+  .tl { flex: 1; }
+  .tl .t { font-size: 14px; font-weight: 600; margin-bottom: 2px; }
+  .tl .d { font-size: 12px; color: var(--sub); line-height: 1.4; }
+  .sw {
+    width: 46px; height: 26px; border-radius: 13px;
+    background: var(--surface2); border: 1.5px solid var(--border);
+    position: relative; flex-shrink: 0; transition: background .2s, border-color .2s;
+  }
+  .sw.on { background: var(--green); border-color: var(--green); }
+  .sw::after {
+    content: ''; position: absolute;
+    width: 20px; height: 20px; border-radius: 50%;
+    background: #fff; top: 2px; left: 2px;
+    transition: left .2s; box-shadow: 0 1px 3px rgba(0,0,0,.4);
+  }
+  .sw.on::after { left: 22px; }
+
+  /* Apply button */
+  .btn {
+    width:100%; padding:15px; border:none; border-radius:13px;
+    background:linear-gradient(135deg,#1565c0,#0277bd);
+    color:#fff; font-size:15px; font-weight:600; cursor:pointer;
+    margin-top:18px; transition:all .18s; letter-spacing:.3px;
+    -webkit-tap-highlight-color:transparent;
+  }
+  .btn:active  { transform:scale(.97); opacity:.9; }
+  .btn:disabled{ opacity:.45; cursor:not-allowed; }
+
+  /* Info box */
+  .info {
+    background:var(--surface); border:1px solid var(--border);
+    border-radius:13px; padding:13px 15px; margin-top:8px;
+  }
+  .info p { font-size:12px; color:var(--sub); line-height:1.6; }
+  .info p+p { margin-top:7px; }
+  .info strong { color:var(--text); }
+
+  /* Toast */
+  .toast {
+    position:fixed; bottom:22px; left:50%;
+    transform:translateX(-50%) translateY(70px);
+    background:#2a2a2a; color:#fff; padding:11px 20px;
+    border-radius:22px; font-size:13px; font-weight:500;
+    transition:transform .28s; z-index:9999;
+    white-space:nowrap; box-shadow:0 4px 18px rgba(0,0,0,.5);
+  }
+  .toast.show { transform:translateX(-50%) translateY(0); }
+
+  .footer { text-align:center; margin-top:28px; color:var(--sub); font-size:11px; }
+</style>
+</head>
+<body>
+
+<div class="hdr">
+  <span class="badge">v1.5</span>
+  <span class="hdr-icon">🖥️</span>
+  <h1>Smooth Display Toggle</h1>
+  <p>Pixel 4 / 4 XL &mdash; Refresh Rate Control</p>
+</div>
+
+<div class="wrap">
+
+  <!-- Status -->
+  <div class="sec">Module Status</div>
+  <div class="sc">
+    <div class="si bl">📱</div>
+    <div class="sl">
+      <div class="l">Saved Mode</div>
+      <div class="v" id="savedMode">Loading...</div>
+    </div>
+    <div class="dot" id="savedDot"></div>
+  </div>
+  <div class="sc">
+    <div class="si gr">⚡</div>
+    <div class="sl">
+      <div class="l">Module</div>
+      <div class="v">Active ✓</div>
+    </div>
+    <div class="dot dg"></div>
+  </div>
+
+  <!-- QS Tile -->
+  <div class="sec">Quick Settings Tile</div>
+  <div class="qs-box">
+    <div class="qs-title">🔲 Tap cycle order</div>
+    <div class="qs-cycle">
+      <div class="qs-step" id="qss1">Auto</div>
+      <div class="qs-arrow">▶</div>
+      <div class="qs-step" id="qss2">60Hz</div>
+      <div class="qs-arrow">▶</div>
+      <div class="qs-step" id="qss3">90Hz</div>
+      <div class="qs-arrow">▶</div>
+      <div class="qs-step" style="border-radius:0 8px 8px 0" id="qss4">Auto</div>
+    </div>
+    <div class="qs-sub">Each tap of the QS tile advances to the next mode. Changes apply instantly.</div>
+  </div>
+
+  <!-- Mode selector -->
+  <div class="sec">Set Mode</div>
+
+  <div class="mc cg" id="c90" onclick="selectMode('90hz')">
+    <div class="mi">🚀</div>
+    <div style="flex:1">
+      <div class="mt" style="color:var(--green)">Force 90Hz</div>
+      <div class="md">Always 90Hz — smoothest feel, higher battery drain.</div>
+    </div>
+    <div class="rd"><div class="rdd"></div></div>
+  </div>
+
+  <div class="mc ca" id="c60" onclick="selectMode('60hz')">
+    <div class="mi">🔋</div>
+    <div style="flex:1">
+      <div class="mt" style="color:var(--amber)">Force 60Hz</div>
+      <div class="md">Locked to 60Hz. Best battery life when smoothness isn't needed.</div>
+    </div>
+    <div class="rd"><div class="rdd"></div></div>
+  </div>
+
+  <div class="mc cb" id="cauto" onclick="selectMode('auto')">
+    <div class="mi">✨</div>
+    <div style="flex:1">
+      <div class="mt" style="color:var(--blue)">Smooth Display</div>
+      <div class="md">Default Android behavior — auto-adjusts based on content and conditions.</div>
+    </div>
+    <div class="rd"><div class="rdd"></div></div>
+  </div>
+
+  <button class="btn" id="applyBtn" onclick="applyMode()">Apply Mode</button>
+
+  <!-- Developer Options Toggles -->
+  <div class="sec">Developer Options</div>
+
+  <div class="toggle-row" id="showRateRow" onclick="toggleShowRefreshRate()">
+    <div class="si am">📊</div>
+    <div class="tl">
+      <div class="t">Show Refresh Rate</div>
+      <div class="d">Displays current Hz as an overlay on screen (Developer Options)</div>
+    </div>
+    <div class="sw" id="showRateSw"></div>
+  </div>
+
+
+  <div class="sec">Notes</div>
+  <div class="info">
+    <p><strong>Battery saver:</strong> When battery saver is active, Android may cap the display to 60Hz regardless of the mode set here. Disable battery saver for Force 90Hz to take full effect.</p>
+    <p><strong>Coral (Pixel 4 XL)</strong> supports 90Hz at any brightness. Flame (Pixel 4) may still drop at very low brightness — hardware limit.</p>
+    <p><strong>QS tile</strong> cycles Auto → 60Hz → 90Hz → Auto on each tap. On first tap after install, <strong>approve the root access prompt</strong> from ReSukiSU — required once so the tile can read and write the mode config.</p>
+    <p><strong>Changes apply live</strong> — no reboot needed. Mode also persists across reboots.</p>
+  </div>
+
+  <div class="footer">Smooth Display Toggle — by Hecker<br>t.me/pixel4seriesupdates</div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const CONF = '/data/adb/smoothdisplay/mode.conf';
+let selMode = 'auto';
+
+// ── KSU bridge ───────────────────────────────────────────────
+async function run(cmd) {
+  try {
+    const r = await ksu.exec(cmd);
+    return (r.stdout ?? r.out ?? '').trim();
+  } catch(e) { return ''; }
+}
+
+// ── Toast ────────────────────────────────────────────────────
+function toast(msg, ms=2500) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  setTimeout(() => el.classList.remove('show'), ms);
+}
+
+// ── QS tile cycle highlight ──────────────────────────────────
+function updateQsCycle(mode) {
+  const s1 = document.getElementById('qss1');
+  const s2 = document.getElementById('qss2');
+  const s3 = document.getElementById('qss3');
+  const s4 = document.getElementById('qss4');
+  s1.className = 'qs-step'; s2.className = 'qs-step';
+  s3.className = 'qs-step'; s4.className = 'qs-step';
+  switch(mode) {
+    case '90hz': s3.className = 'qs-step active-g'; break;
+    case '60hz': s2.className = 'qs-step active-a'; break;
+    default:     s1.className = 'qs-step active-b'; s4.className = 'qs-step active-b'; break;
+  }
+}
+
+// ── Mode cards ───────────────────────────────────────────────
+function selectMode(mode) {
+  selMode = mode;
+  ['c90','c60','cauto'].forEach(id => document.getElementById(id).classList.remove('sel'));
+  const map = { '90hz':'c90', '60hz':'c60', 'auto':'cauto' };
+  document.getElementById(map[mode]).classList.add('sel');
+}
+
+function updateSavedDisplay(mode) {
+  const el  = document.getElementById('savedMode');
+  const dot = document.getElementById('savedDot');
+  const map = {
+    '90hz': ['Force 90Hz',         'dot dg'],
+    '60hz': ['Force 60Hz',         'dot da'],
+    'auto': ['Smooth Display (auto)', 'dot db']
+  };
+  const [label, cls] = map[mode] || map['auto'];
+  el.textContent = label;
+  dot.className  = cls;
+  updateQsCycle(mode);
+}
+
+// ── Load saved mode ──────────────────────────────────────────
+async function loadMode() {
+  const raw  = await run(`cat ${CONF} 2>/dev/null || echo auto`);
+  const mode = raw.trim() || 'auto';
+  selMode = mode;
+  selectMode(mode);
+  updateSavedDisplay(mode);
+}
+
+// ── Apply mode ───────────────────────────────────────────────
+async function applyMode() {
+  const btn = document.getElementById('applyBtn');
+  btn.disabled = true;
+  btn.textContent = 'Applying...';
+
+  await run(`echo '${selMode}' > ${CONF}`);
+
+  let cmd;
+  switch(selMode) {
+    case '90hz':
+      cmd = `settings put system peak_refresh_rate 90 && \
+settings put system min_refresh_rate 90 && \
+device_config put display_manager peak_refresh_rate 90 && \
+device_config put display_manager min_refresh_rate 90 && \
+settings put global battery_saver_constants "vibration_disabled=false,animation_disabled=false,soundtrigger_disabled=false,firewall_disabled=false,adjust_brightness_disabled=true,adjust_brightness_factor=0.5,fullbackup_deferred=false,keyvaluebackup_deferred=false,force_all_apps_standby=false,force_background_freeze=false,optional_sensors_disabled=true,aod_disabled=false,activate_datasaver=false"`;
+      break;
+    case '60hz':
+      cmd = `settings put system peak_refresh_rate 60 && \
+settings put system min_refresh_rate 60 && \
+device_config put display_manager peak_refresh_rate 60 && \
+device_config put display_manager min_refresh_rate 60 && \
+settings delete global battery_saver_constants`;
+      break;
+    default:
+      cmd = `settings delete system peak_refresh_rate; \
+settings delete system min_refresh_rate; \
+device_config delete display_manager peak_refresh_rate; \
+device_config delete display_manager min_refresh_rate; \
+settings delete global battery_saver_constants`;
+  }
+
+  await run(cmd);
+  updateSavedDisplay(selMode);
+
+  const labels = { '90hz':'Force 90Hz', '60hz':'Force 60Hz', 'auto':'Smooth Display (auto)' };
+  toast('✓ Applied: ' + labels[selMode]);
+
+  btn.disabled = false;
+  btn.textContent = 'Apply Mode';
+}
+
+// ── Show Refresh Rate toggle ─────────────────────────────────
+// settings put does NOT work — SurfaceFlinger ignores runtime settings changes.
+// The overlay is controlled directly via SurfaceFlinger binder transaction 1034.
+// Confirmed working via ADB testing:
+//   ON:  service call SurfaceFlinger 1034 i32 1
+//   OFF: service call SurfaceFlinger 1034 i32 0
+// State detection: dumpsys SurfaceFlinger | grep RefreshRateOverlayBuffer
+let showRefreshRate = false;
+
+async function loadShowRefreshRate() {
+  // Check if RefreshRateOverlayBuffer exists in SurfaceFlinger — means overlay is ON
+  const out = await run(`dumpsys SurfaceFlinger 2>/dev/null | grep -c RefreshRateOverlayBuffer`);
+  showRefreshRate = (parseInt(out) > 0);
+  document.getElementById('showRateSw').classList.toggle('on', showRefreshRate);
+}
+
+async function toggleShowRefreshRate() {
+  showRefreshRate = !showRefreshRate;
+  document.getElementById('showRateSw').classList.toggle('on', showRefreshRate);
+  const v = showRefreshRate ? '1' : '0';
+  await run(`service call SurfaceFlinger 1034 i32 ${v}`);
+  toast(showRefreshRate ? '✓ Overlay ON — check top-left corner' : '✓ Overlay OFF');
+}
+
+// ── Init ─────────────────────────────────────────────────────
+window.addEventListener('DOMContentLoaded', async () => {
+  await loadMode();
+  await loadShowRefreshRate();
+});
+</script>
+</body>
+</html>
